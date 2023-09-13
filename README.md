@@ -2,6 +2,12 @@
 
 ## tl;dr
 
+Forked from  [terraform-azurerm-examples/terraform-bootstrap](https://github.com/terraform-azurerm-examples/terraform-bootstrap).  This was pretty broken.  I also make the following changes:
+
+1. Most people can't create service principals themselves, so assume that's done outside of terraform.
+1. Here at ServiceNow, we currently use Thycotic for passwords, so get it from there to be copied in the KeyVault.
+1. Update to run with a reasonable new version of terraform.
+
 Creates service principal, Terraform remote state storage account and key vault.
 
 1. `./bootstrap_backend.sh`
@@ -71,15 +77,24 @@ This is the minimum required for the Terraform config to run given that the stat
 If you wish to override the variable defaults then create a valid terraform.tfvars. Example below:
 
 ```terraform
-terraform_state_aad_group = "terraform-state"
+terraform_state_aad_principals = {
+    "groups": ["aad-group-name],
+    "users": ["user1@domain.com", "user2@domain.com"],
+    "service_principals: ["sp_name],
+}
 
-service_principal_name = "terraform"
+service_principal_name = "terraform-sp"
 service_principal_rbac_assignments = [
   {
     role  = "Contributor"
     scope = "/subscriptions/2d31be49-d959-4415-bb65-8aec2c90ba62"
   }
 ]
+
+tss_domain     = "servicenow"
+tss_username   = "user.name"
+tss_password   = "Password.!"
+tss_server_url = "https://localhost/SecretServer"
 ```
 
 You will find an example file in the repo.

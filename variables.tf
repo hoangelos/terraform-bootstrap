@@ -27,14 +27,18 @@ variable "tags" {
   default     = {}
 }
 
-variable "terraform_state_aad_group" {
+variable "terraform_state_aad_principals" {
   description = "Name of the optional AAD security group for managing Terraform state and key vault secrets."
-  type        = string
-  default     = ""
+  type        = map(list(string))
+  default     = {
+    "groups": [],
+    "users": [],
+    "service_principals": [],
+  }
 }
 
 variable "service_principal_name" {
-  description = "Name for the terraform state service principal. Defaults to the storage account name"
+  description = "Name for the terraform state service principal"
   type        = string
   default     = ""
 }
@@ -57,4 +61,26 @@ variable "azurerm_version_constraint" {
 variable "key_vault_soft_delete_retention" {
   description = "Specify the number of days that a secret should be retained in key vault's soft deletion. (7-90)"
   default     = 90
+}
+
+variable "tss_username" {
+  type = string
+}
+
+variable "tss_domain" {
+  type    = string
+  default = ""
+}
+
+variable "tss_password" {
+  type = string
+}
+
+variable "tss_server_url" {
+  type = string
+}
+
+variable "tss_secret_id" {
+  type    = string
+  default = ""
 }

@@ -16,21 +16,10 @@ resource "azurerm_monitor_diagnostic_setting" "state" {
   log_analytics_workspace_id = azurerm_log_analytics_workspace.state.id
 
 
-  log {
+  enabled_log {
     category = "AuditEvent"
-    enabled  = true
-
-    retention_policy {
-      enabled = true
-      days    = 28
-    }
   }
-
   metric {
     category = "AllMetrics"
-
-    retention_policy {
-      enabled = false
-    }
   }
 }

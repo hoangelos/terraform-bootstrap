@@ -10,7 +10,6 @@ resource "azurerm_key_vault" "state" {
   enabled_for_disk_encryption     = false
   enabled_for_template_deployment = false
   purge_protection_enabled        = false
-  soft_delete_enabled             = true
   soft_delete_retention_days      = var.key_vault_soft_delete_retention
 
   network_acls {
@@ -39,7 +38,7 @@ resource "azurerm_key_vault_access_policy" "terraform_state_owner" {
 resource "azurerm_key_vault_access_policy" "terraform_state_service_principal" {
   key_vault_id = azurerm_key_vault.state.id
   tenant_id    = data.azurerm_client_config.current.tenant_id
-  object_id    = azuread_service_principal.terraform.object_id
+  object_id    = data.azuread_service_principal.terraform.object_id
 
   key_permissions = []
 
@@ -50,11 +49,45 @@ resource "azurerm_key_vault_access_policy" "terraform_state_service_principal" {
 }
 
 resource "azurerm_key_vault_access_policy" "terraform_state_aad_group" {
-  for_each = local.terraform_state_aad_group
+  for_each = toset(var.terraform_state_aad_principals["groups"])
 
   key_vault_id = azurerm_key_vault.state.id
   tenant_id    = data.azurerm_client_config.current.tenant_id
   object_id    = data.azuread_group.terraform_state_aad_group[each.value].object_id
+
+  key_permissions = []
+
+  secret_permissions = [
+    "Get",
+    "List",
+    "Set",
+    "Delete"
+  ]
+}
+
+resource "azurerm_key_vault_access_policy" "terraform_state_aad_users" {
+  for_each = toset(var.terraform_state_aad_principals["users"])
+
+  key_vault_id = azurerm_key_vault.state.id
+  tenant_id    = data.azurerm_client_config.current.tenant_id
+  object_id    = data.azuread_user.terraform_state_aad_users[each.value].object_id
+
+  key_permissions = []
+
+  secret_permissions = [
+    "Get",
+    "List",
+    "Set",
+    "Delete"
+  ]
+}
+
+resource "azurerm_key_vault_access_policy" "terraform_state_aad_sps" {
+  for_each = toset(var.terraform_state_aad_principals["service_principals"])
+
+  key_vault_id = azurerm_key_vault.state.id
+  tenant_id    = data.azurerm_client_config.current.tenant_id
+  object_id    = data.azuread_service_principal.terraform_state_aad_sps[each.value].object_id
 
   key_permissions = []
 
@@ -77,12 +110,17 @@ resource "azurerm_key_vault_secret" "client_id" {
   depends_on   = [azurerm_key_vault_access_policy.terraform_state_owner]
   name         = "client-id"
   key_vault_id = azurerm_key_vault.state.id
-  value        = azuread_service_principal.terraform.application_id
+  value        = data.azuread_service_principal.terraform.application_id
+}
+
+data "tss_secret" "sp_secret" {
+  field = "Key Value"
+  id    = 14533
 }
 
 resource "azurerm_key_vault_secret" "client_secret" {
   depends_on   = [azurerm_key_vault_access_policy.terraform_state_owner]
   name         = "client-secret"
   key_vault_id = azurerm_key_vault.state.id
-  value        = azuread_service_principal_password.terraform.value
+  value        = data.tss_secret.sp_secret.value
 }
