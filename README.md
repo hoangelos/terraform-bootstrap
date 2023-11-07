@@ -1,4 +1,4 @@
-# terraform-bootstrap
+# edna-mlops-terraform-bootstrap
 
 ## tl;dr
 
